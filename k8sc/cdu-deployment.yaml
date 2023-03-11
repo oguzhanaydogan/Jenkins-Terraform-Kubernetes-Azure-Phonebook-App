@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cdu-deployment
+  labels:
+    app: cdu
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cdu
+  template:
+    metadata:
+      labels:
+        app: cdu
+    spec:
+      containers:
+      - name: cdu
+        image: ccseyhan/cdu
+        ports:
+        - containerPort: 80
+        env:
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: db-secret
+                key: MYSQL_PASSWORD
+        envFrom:
+          - configMapRef:
+              name: servers-configmap        
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: cdu-service
+spec:
+  type: NodePort
+  selector:
+    app: cdu
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30001

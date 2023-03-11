@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-deployment
+  labels:
+    app: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - name: db
+        image: mysql:5.7
+        ports:
+        - containerPort: 3306
+        env:
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: db-secret
+                key: MYSQL_PASSWORD
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: db-secret
+                key: MYSQL_ROOT_PASSWORD
+        envFrom:
+          - configMapRef:
+              name: db-configmap
+        volumeMounts:
+          - name: db-pv
+            mountPath: /var/lib/mysql
+      volumes:
+      - name: db-pv
+        persistentVolumeClaim:
+          claimName: db-claim
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-service
+  labels:
+    app: db-service
+spec:
+  selector:
+    app: db
+  ports:
+    - port: 3306
+      targetPort: 3306
